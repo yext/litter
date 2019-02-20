@@ -122,7 +122,7 @@ func (s *dumpState) dumpStruct(v reflect.Value) {
 	numFields := v.NumField()
 	for i := 0; i < numFields; i++ {
 		vtf := vt.Field(i)
-		if s.config.HidePrivateFields && vtf.PkgPath != "" || s.config.FieldExclusions != nil && s.config.FieldExclusions.MatchString(vtf.Name) {
+		if s.config.HidePrivateFields && vtf.PkgPath != "" || s.config.FieldExclusions != nil && s.config.FieldExclusions.MatchString(vtf.Name) || v.Field(i).Kind() == reflect.Ptr && v.Field(i).IsNil() || v.Field(i).Kind() == reflect.String && v.Field(i).String() == "" {
 			continue
 		}
 		if !preambleDumped {
@@ -337,8 +337,14 @@ func (s *dumpState) dumpVal(value reflect.Value) {
 
 	case reflect.Ptr:
 		if s.handlePointerAliasingAndCheckIfShouldDescend(v) {
-			s.w.Write([]byte("&"))
-			s.dumpVal(v.Elem())
+			if v.Elem().Kind() != reflect.String {
+				s.w.Write([]byte("&"))
+				s.dumpVal(v.Elem())
+			} else {
+				s.w.Write([]byte("yext.String("))
+				s.dumpVal(v.Elem())
+				s.w.Write([]byte(")"))
+			}
 		}
 
 	case reflect.Map:
