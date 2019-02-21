@@ -337,7 +337,16 @@ func (s *dumpState) dumpVal(value reflect.Value) {
 
 	case reflect.Ptr:
 		if s.handlePointerAliasingAndCheckIfShouldDescend(v) {
-			if v.Elem().Kind() != reflect.String {
+			structName := v.Type().String()
+			if strings.Contains(structName, "**yext.Hours") {
+				s.w.Write([]byte("yext.NullableHours("))
+				s.dumpVal(v.Elem())
+				s.w.Write([]byte(")"))
+			} else if strings.Contains(structName, "**yext.DayHours") {
+				s.w.Write([]byte("yext.NullableDayHours("))
+				s.dumpVal(v.Elem())
+				s.w.Write([]byte(")"))
+			} else if v.Elem().Kind() != reflect.String {
 				s.w.Write([]byte("&"))
 				s.dumpVal(v.Elem())
 			} else {
